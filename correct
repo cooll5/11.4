@@ -1,0 +1,403 @@
+#include <iostream>
+#include <string>
+#include <ctime>
+#include <iomanip>
+#include <fstream>
+using namespace std;
+
+struct Sluzbuvets
+{
+	char LastName[60];
+	char Initials[60];
+	char Posada[60];
+	int Year;
+	int Oklad;
+};
+Sluzbuvets* addroutetolis(Sluzbuvets* arr, int& size, Sluzbuvets obj);
+void Create();
+void AutoCreate();
+void StartMenu();
+void Print();
+void Add();
+void Remove();
+void Change();
+void Find();
+void Sort();
+void savetofile(Sluzbuvets* arr, int size, string filename);
+Sluzbuvets fRead(fstream& f, const int i)
+{
+	Sluzbuvets x;
+	f.seekg(i * sizeof(Sluzbuvets));
+	f.read((char*)&x, sizeof(Sluzbuvets));
+	return x;
+}
+
+void fWrite(fstream& f, int i, Sluzbuvets x)
+{
+	f.seekp(i * (long)sizeof(Sluzbuvets));
+	f.write((char*)&x, sizeof(Sluzbuvets));
+}
+void fChange(fstream& f, int i, int j)
+{
+	Sluzbuvets x = fRead(f, i);
+	Sluzbuvets y = fRead(f, j);
+	fWrite(f, i, y);
+	fWrite(f, j, x);
+}
+void main()
+{
+	StartMenu();
+	system("pause");
+}
+void StartMenu()
+{
+	int ch;
+	do
+	{
+		{
+			cout << "=======Menu=======" << endl;
+			cout << "1.Create list" << endl;
+			cout << "2.Print list" << endl;
+			cout << "3.Add" << endl;
+			cout << "4.Remove" << endl;
+			cout << "5.Change" << endl;
+			cout << "6.Sort" << endl;
+			cout << "7.Search" << endl;
+			cout << "8.Clear screen" << endl;
+			cout << "9.or any else number - Exit" << endl;
+			cout << "==================" << endl;
+		}
+		cout << "Enter you choice: "; cin >> ch;
+		switch (ch)
+		{
+		case 1:
+		{
+			AutoCreate();
+			break;
+		}
+		case 2:
+		{
+			Print();
+			break;
+		}
+		case 3:
+		{
+			Add();
+			break;
+		}
+		case 4:
+		{
+			Remove();
+			break;
+		}
+		case 5:
+		{
+			Change();
+			break;
+		}
+		case 6:
+		{
+			Sort();
+			break;
+		}
+		case 7:
+		{
+			Find();
+			break;
+		}
+		case 8:
+		{
+			system("cls");
+			break;
+		}
+		default:
+			break;
+		}
+	} while (ch <= 9);
+}
+
+void Create()
+{
+	int size = 0;
+	cout << "Enter filename:";
+	string filename;
+	cin >> filename;
+	cout << "Enter count:"; cin >> size;
+	ofstream fout(filename, ios::binary);
+	for (size_t i = 0; i < size; i++)
+	{
+		Sluzbuvets sl;
+		cout << "Last name: "; cin >> sl.LastName;
+		cout << "Initials: "; cin >> sl.Initials;
+		cout << "Posada: "; cin >> sl.Posada;
+		cout << "Year: "; cin >> sl.Year;
+		cout << "Fee: "; cin >> sl.Oklad;
+		fout.write((char*)&sl, sizeof(sl));
+	}
+	fout.close();
+}
+void AutoCreate()
+{
+	int size;
+	string filename;
+	cout << "Filename:"; cin >> filename;
+	cout << "Count:"; cin >> size;
+	ofstream fout(filename, ios::binary);
+	for (size_t i = 0; i < size; i++)
+	{
+		Sluzbuvets sl;
+		cin >> sl.Initials;
+		cin >> sl.LastName;
+		sl.Oklad = rand() % 10000 + 5000; sl.Oklad -= (sl.Oklad % 100);
+		cin >> sl.Posada;
+		sl.Year = 1995 + rand() % 25;
+		fout.write((char*)&sl, sizeof(sl));
+	}
+}
+
+void Print()
+{
+	cout << "Filename:"; string filename;
+	cin >> filename;
+	ifstream fin(filename, ios::binary);
+	string str;
+	int i = 0;
+	cout << "=================================================================" << endl;
+	cout << "N\t|Last Name     |Initials|Posada        |Fee\t|Year\t|" << endl;
+	cout << "=================================================================" << endl;
+	Sluzbuvets sl;
+	while (fin.read((char*)&sl, sizeof(sl)))
+	{
+		cout << i << "\t|";
+		cout << sl.LastName << setw(15 - strlen(sl.LastName)) << "|";
+		cout << sl.Initials << "\t|";
+		cout << sl.Posada << setw(15 - strlen(sl.Posada)) << "|";
+		cout << sl.Oklad << "\t|";
+		cout << sl.Year << "\t|";
+		cout << endl;
+		i++;
+	}
+	cout << "=================================================================" << endl;
+}
+void Add()
+{
+	string filename;
+	cout << "Filename: ";
+	cin >> filename;
+	ofstream fout(filename, ios::app | ios::binary);
+	Sluzbuvets sl;
+	cout << "Last name: "; cin >> sl.LastName;
+	cout << "Initials: "; cin >> sl.Initials;
+	cout << "Posada: "; cin >> sl.Posada;
+	cout << "Year: "; cin >> sl.Year;
+	cout << "Fee: "; cin >> sl.Oklad;
+	fout.write((char*)&sl, sizeof(sl));
+	fout.close();
+}
+void Remove()
+{
+	string filename;
+	cout << "Filename:"; cin >> filename;
+	ifstream fin;
+	fin.open(filename, ios::binary);
+	Sluzbuvets* sls = new Sluzbuvets[0];
+	int size = 0;
+	Sluzbuvets sl;
+	while (fin.read((char*)&sl, sizeof(sl)))
+	{
+		sls = addroutetolis(sls, size, sl);
+	}
+	Sluzbuvets* nsls = new Sluzbuvets[size];
+	cout << "Enter the index of a marchroot which you want to remove: ";
+	int index;
+	cin >> index;
+	bool moved = false;
+	for (size_t i = 0; i < size - 1; i++)
+	{
+		if (i == index)  	moved = true;
+		if (moved)	nsls[i] = sls[i + 1];
+		else	nsls[i] = sls[i];
+	}
+	--size;
+	savetofile(nsls, size, filename);
+}
+void savetofile(Sluzbuvets* arr, int size, string filename)
+{
+	ofstream fout(filename, ios::binary);
+	for (size_t i = 0; i < size; i++)
+	{
+		Sluzbuvets sl = arr[i];
+		fout.write((char*)&sl, sizeof(sl));
+	}
+	fout.close();
+}
+void Change()
+{
+	Sluzbuvets* arr = new Sluzbuvets[0];
+	int size = 0;
+	string filename;
+	cout << "Filename:"; cin >> filename;
+	ifstream fin(filename, ios::binary);
+	Sluzbuvets sl;
+	while (fin.read((char*)&sl, sizeof(sl)))
+	{
+		arr = addroutetolis(arr, size, sl);
+	}
+	fin.close();
+	cout << "Enter the index of a worker which you want to change: ";
+	int index = 0; cin >> index;
+	if (index < size)
+	{
+		cout << "=================================================================" << endl;
+		cout << "N\t|Last Name     |Initials|Posada        |Fee\t|Year\t|" << endl;
+		cout << "=================================================================" << endl;
+		cout << index << "\t|";
+		cout << arr[index].LastName << setw(15 - strlen(arr[index].LastName)) << "|";
+		cout << arr[index].Initials << "\t|";
+		cout << arr[index].Posada << setw(15 - strlen(arr[index].Posada)) << "|";
+		cout << arr[index].Oklad << "\t|";
+		cout << arr[index].Year << "\t|";
+		cout << endl;
+		cout << "=================================================================" << endl;
+		Sluzbuvets sl;
+		cout << "Last name: "; cin >> sl.LastName;
+		cout << "Initials: "; cin >> sl.Initials;
+		cout << "Posada: "; cin >> sl.Posada;
+		cout << "Year: "; cin >> sl.Year;
+		cout << "Fee: "; cin >> sl.Oklad;
+		arr[index] = sl;
+	}
+	else cout << "There is no worker with the number " << index << endl;
+	savetofile(arr, size, filename);
+}
+
+void Find()
+{
+	string filename;
+	cout << "Filename:"; cin >> filename;
+	ifstream fin(filename, ios::binary);
+	cout << "Last name ofa worker which u want to find: ";
+	string ln; cin >> ln;
+	int index = -1;
+	Sluzbuvets sl;
+	int i = -1;
+	Sluzbuvets tmp;
+	while (fin.read((char*)&tmp, sizeof(tmp)))
+	{
+		if (tmp.LastName == ln)
+		{
+			index = i;
+			sl = tmp;
+			break;
+		}
+		i++;
+	}
+	if (index != -1)
+	{
+		cout << "=================================================================" << endl;
+		cout << "N\t|Last Name     |Initials|Posada        |Fee\t|Year\t|" << endl;
+		cout << "=================================================================" << endl;
+		cout << index << "\t|";
+		cout << sl.LastName << setw(15 - strlen(sl.LastName)) << "|";
+		cout << sl.Initials << "\t|";
+		cout << sl.Posada << setw(15 - strlen(sl.Posada)) << "|";
+		cout << sl.Oklad << "\t|";
+		cout << sl.Year << "\t|";
+		cout << endl;
+		cout << "=================================================================" << endl;
+
+	}
+	else
+	{
+		cout << "Sorry but the worker with last name " << ln << "doe not exist in this company." << endl;
+	}
+}
+
+
+void Sort()
+{
+	string filename;
+	cout << "Filename:"; cin >> filename;
+	fstream f(filename, ios::binary | ios::in | ios::out | ios::ate);
+	int size = f.tellg();
+	int k = sizeof(Sluzbuvets);
+	f.seekg(0, ios::beg);
+	Sluzbuvets* arr = new Sluzbuvets[0];
+	Sluzbuvets sl;
+
+	//	size += 1;
+	system("cls");
+	cout << "========Sort Menu==========" << endl;
+	cout << "1.Sort by Last name" << endl;
+	cout << "2.Sort by fee" << endl;
+	cout << "3.Sort by year" << endl;
+	cout << "4.Exit" << endl;
+	cout << "===========================" << endl;
+	cout << "Your choice:"; int choice; cin >> choice;
+	switch (choice)
+	{
+	case 1:
+	{
+		for (int i = 1; i < size / k; i++)
+		{
+			for (int j = 0; j < size / k - 1; j++)
+			{
+				Sluzbuvets a = fRead(f, j);
+				Sluzbuvets b = fRead(f, j + 1);
+				if (a.LastName > b.LastName)
+					fChange(f, j, j + 1);
+
+			}
+
+		}
+		break;
+	}
+	case 2:
+	{
+		for (int i = 1; i < size / k; i++)
+		{
+			for (int j = 0; j < size / k - 1; j++)
+			{
+				Sluzbuvets a = fRead(f, j);
+				Sluzbuvets b = fRead(f, j + 1);
+				if (a.Oklad > b.Oklad)
+					fChange(f, j, j + 1);
+			}
+
+		}
+		break;
+	}
+	case 3:
+	{
+		for (int i = 1; i < size / k; i++)
+		{
+			for (int j = 0; j < size / k - 1; j++)
+			{
+				Sluzbuvets a = fRead(f, j);
+				Sluzbuvets b = fRead(f, j + 1);
+				if (a.Year > b.Year)
+					fChange(f, j, j + 1);
+
+			}
+
+		}
+		break;
+	}
+	default:
+		return;
+	}
+	f.close();
+}
+
+
+Sluzbuvets* addroutetolis(Sluzbuvets* arr, int& size, Sluzbuvets obj)
+{
+	Sluzbuvets* arr2 = new Sluzbuvets[size + 1];
+	for (size_t i = 0; i < size; i++)
+	{
+		arr2[i] = arr[i];
+	}
+	arr2[size] = obj;
+	size++;
+	return arr2;
+}
